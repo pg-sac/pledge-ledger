@@ -86,73 +86,8 @@
   .error-text{font-size:0.82rem; color:var(--danger); margin-top:0.5em;}
   .success-text{font-size:0.82rem; color:var(--success); margin-top:0.5em;}
 
-  /* ---------- auth view ---------- */
-  #view-auth{
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:2rem 1.2rem;
-    background:
-      repeating-linear-gradient(var(--paper), var(--paper) 27px, var(--line) 28px);
-    background-size:100% 28px;
-  }
-  .auth-box{
-    width:100%;
-    max-width:400px;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:2.2rem 2rem 1.8rem;
-    box-shadow:0 1px 0 rgba(31,46,35,0.04);
-  }
-  .auth-brand{
-    display:flex;
-    align-items:baseline;
-    gap:0.5em;
-    margin-bottom:0.2em;
-  }
-  .auth-brand .mark{
-    font-family:var(--serif);
-    font-size:1.6rem;
-    font-weight:700;
-    color:var(--ink);
-  }
-  .auth-brand .tag{
-    font-family:var(--mono);
-    font-size:0.68rem;
-    color:var(--brass-deep);
-    letter-spacing:0.02em;
-  }
-  .auth-sub{color:var(--ink-soft); font-size:0.9rem; margin:0.2em 0 1.6em; line-height:1.5;}
-  .auth-toggle{
-    display:flex;
-    border:1px solid var(--line);
-    border-radius:3px;
-    overflow:hidden;
-    margin-bottom:1.6em;
-  }
-  .auth-toggle button{
-    flex:1;
-    border:none;
-    background:transparent;
-    padding:0.6em;
-    font-size:0.85rem;
-    font-weight:500;
-    color:var(--ink-soft);
-  }
-  .auth-toggle button.active{background:var(--ink); color:var(--paper);}
-  .disclosure{
-    margin-top:1.4em;
-    padding-top:1.2em;
-    border-top:1px dashed var(--line);
-    font-size:0.75rem;
-    color:var(--ink-faint);
-    line-height:1.5;
-  }
-
   /* ---------- app shell ---------- */
-  #view-shell{display:none; min-height:100vh;}
+  #view-shell{display:block; min-height:100vh;}
   .shell{display:flex; min-height:100vh;}
   .rail{
     width:220px;
@@ -201,18 +136,6 @@
     border-left-color:var(--brass);
     font-weight:500;
   }
-  .rail-foot{margin-top:auto; padding:0 1.4rem;}
-  .rail-user{font-size:0.75rem; color:rgba(243,241,228,0.55); margin-bottom:0.6em; word-break:break-all;}
-  .signout{
-    font-size:0.8rem;
-    background:transparent;
-    border:1px solid rgba(243,241,228,0.25);
-    color:rgba(243,241,228,0.8);
-    padding:0.5em 0.8em;
-    border-radius:3px;
-    width:100%;
-  }
-  .signout:hover{border-color:var(--paper); color:var(--paper);}
 
   .main{
     flex:1;
@@ -409,62 +332,12 @@
     .nav-item{width:auto; padding:0.5em 0.8em; border-left:none; border-bottom:3px solid transparent;}
     .nav-item.active{border-left-color:transparent; border-bottom-color:var(--brass);}
     .nav-item span.nav-label{display:none;}
-    .rail-foot{display:none;}
     .main{padding:1.6rem 1.2rem 3rem;}
   }
 </style>
 </head>
 <body>
 <div id="app">
-
-  <!-- ============ AUTH VIEW ============ -->
-  <div id="view-auth">
-    <div class="auth-box">
-      <div class="auth-brand">
-        <span class="mark">Pledge Ledger</span>
-      </div>
-      <div class="auth-sub">Turn handwritten pledge cards into a clean spreadsheet — sign in to scan and save.</div>
-
-      <div class="auth-toggle">
-        <button id="tab-signin" class="active" onclick="setAuthMode('signin')">Sign in</button>
-        <button id="tab-signup" onclick="setAuthMode('signup')">Create account</button>
-      </div>
-
-      <form id="form-signin" onsubmit="return handleSignin(event)">
-        <div class="field">
-          <label for="si-email">Email</label>
-          <input type="email" id="si-email" required autocomplete="username">
-        </div>
-        <div class="field">
-          <label for="si-password">Password</label>
-          <input type="password" id="si-password" required autocomplete="current-password">
-        </div>
-        <div id="si-error" class="error-text" style="display:none;"></div>
-        <button type="submit" class="btn" style="width:100%; margin-top:0.4em;">Sign in</button>
-      </form>
-
-      <form id="form-signup" style="display:none;" onsubmit="return handleSignup(event)">
-        <div class="field">
-          <label for="su-name">Your name</label>
-          <input type="text" id="su-name" required autocomplete="name">
-        </div>
-        <div class="field">
-          <label for="su-email">Email</label>
-          <input type="email" id="su-email" required autocomplete="username">
-        </div>
-        <div class="field">
-          <label for="su-password">Password</label>
-          <input type="password" id="su-password" required autocomplete="new-password" minlength="4">
-        </div>
-        <div id="su-error" class="error-text" style="display:none;"></div>
-        <button type="submit" class="btn" style="width:100%; margin-top:0.4em;">Create account</button>
-      </form>
-
-      <div class="disclosure">
-        This is a lightweight, self-contained tool: accounts and settings are stored in this app's shared storage rather than a secure backend, so anyone with a link to this app can see the account list and sheet settings. Don't reuse a sensitive password here — use one made up just for this tool.
-      </div>
-    </div>
-  </div>
 
   <!-- ============ APP SHELL ============ -->
   <div id="view-shell">
@@ -483,10 +356,6 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
           <span class="nav-label">Pledge history</span>
         </button>
-        <div class="rail-foot">
-          <div class="rail-user" id="rail-user-email"></div>
-          <button class="signout" onclick="handleSignout()">Sign out</button>
-        </div>
       </div>
 
       <div class="main">
@@ -665,89 +534,10 @@ async function storeDelete(key, shared){
 }
 
 /* ---------------------------------------------------------------
-   Auth
+   App entry (no login — everyone lands straight on the scan screen)
 ---------------------------------------------------------------- */
-let currentUser = null; // {email, name}
-
-function setAuthMode(mode){
-  document.getElementById('tab-signin').classList.toggle('active', mode==='signin');
-  document.getElementById('tab-signup').classList.toggle('active', mode==='signup');
-  document.getElementById('form-signin').style.display = mode==='signin' ? 'block':'none';
-  document.getElementById('form-signup').style.display = mode==='signup' ? 'block':'none';
-}
-
-function showError(id, msg){
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-function hideError(id){
-  document.getElementById(id).style.display = 'none';
-}
-
-async function handleSignup(e){
-  e.preventDefault();
-  hideError('su-error');
-  const name = document.getElementById('su-name').value.trim();
-  const email = document.getElementById('su-email').value.trim().toLowerCase();
-  const password = document.getElementById('su-password').value;
-  if(!email || !password){ return false; }
-
-  const existing = await storeGet('user:'+email, true);
-  if(existing){
-    showError('su-error', 'An account with that email already exists — try signing in instead.');
-    return false;
-  }
-  await storeSet('user:'+email, JSON.stringify({ name, password, createdAt: Date.now() }), true);
-  await storeSet('session:current', email, false);
-  currentUser = { email, name };
-  enterApp();
-  return false;
-}
-
-async function handleSignin(e){
-  e.preventDefault();
-  hideError('si-error');
-  const email = document.getElementById('si-email').value.trim().toLowerCase();
-  const password = document.getElementById('si-password').value;
-  const raw = await storeGet('user:'+email, true);
-  if(!raw){
-    showError('si-error', 'No account found with that email.');
-    return false;
-  }
-  const record = JSON.parse(raw);
-  if(record.password !== password){
-    showError('si-error', 'That password doesn\'t match.');
-    return false;
-  }
-  await storeSet('session:current', email, false);
-  currentUser = { email, name: record.name };
-  enterApp();
-  return false;
-}
-
-async function handleSignout(){
-  await storeDelete('session:current', false);
-  currentUser = null;
-  stopCamera();
-  document.getElementById('view-shell').style.display = 'none';
-  document.getElementById('view-auth').style.display = 'flex';
-}
-
-async function tryAutoLogin(){
-  const email = await storeGet('session:current', false);
-  if(!email) return false;
-  const raw = await storeGet('user:'+email, true);
-  if(!raw) return false;
-  const record = JSON.parse(raw);
-  currentUser = { email, name: record.name };
-  return true;
-}
-
 async function enterApp(){
-  document.getElementById('view-auth').style.display = 'none';
   document.getElementById('view-shell').style.display = 'block';
-  document.getElementById('rail-user-email').textContent = currentUser.name ? currentUser.name+' · '+currentUser.email : currentUser.email;
   await loadSheetConfig();
   await renderHistory();
 }
@@ -975,7 +765,7 @@ async function savePledge(e){
     address: document.getElementById('pf-address').value.trim(),
     pledgeDate: document.getElementById('pf-date').value.trim(),
     notes: document.getElementById('pf-notes').value.trim(),
-    scannedBy: currentUser ? currentUser.email : '',
+    scannedBy: '',
     scannedAt: Date.now(),
     syncStatus: 'local'
   };
@@ -1071,10 +861,7 @@ function escapeHtml(s){
    Boot
 ---------------------------------------------------------------- */
 (async function init(){
-  const loggedIn = await tryAutoLogin();
-  if(loggedIn){
-    await enterApp();
-  }
+  await enterApp();
 })();
 </script>
 </body>
