@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pledge Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F1E4;
+    --paper-deep:#EAE6D3;
+    --card:#FFFDF6;
+    --ink:#1F2E23;
+    --ink-soft:#4B5A4F;
+    --ink-faint:#8B9186;
+    --brass:#A9793A;
+    --brass-deep:#8C5F27;
+    --sage:#7E8B72;
+    --line:#CBC4A9;
+    --danger:#A23E32;
+    --success:#3E6B4F;
+    --serif:'Fraunces', serif;
+    --sans:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{min-height:100vh;}
+  button{font-family:var(--sans);cursor:pointer;}
+  input, textarea{font-family:var(--sans);}
+
+  /* ---------- shared bits ---------- */
+  .wordmark{
+    font-family:var(--serif);
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .btn{
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    padding:0.7em 1.3em;
+    font-size:0.92rem;
+    font-weight:500;
+    border-radius:3px;
+    transition:transform .12s ease, background .15s ease;
+  }
+  .btn:hover{background:var(--brass-deep); border-color:var(--brass-deep);}
+  .btn:active{transform:scale(0.98);}
+  .btn:disabled{opacity:0.45; cursor:not-allowed; transform:none;}
+  .btn-outline{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  .btn-outline:hover{background:var(--paper-deep); border-color:var(--ink-soft); color:var(--ink);}
+  .btn-brass{background:var(--brass); border-color:var(--brass); color:#fff;}
+  .btn-brass:hover{background:var(--brass-deep); border-color:var(--brass-deep);}
+  .btn-danger{background:transparent; border:1px solid var(--danger); color:var(--danger);}
+  .btn-danger:hover{background:var(--danger); color:#fff;}
+
+  label{font-size:0.78rem; color:var(--ink-soft); font-weight:500; display:block; margin-bottom:0.35em;}
+  input[type=text], input[type=email], input[type=password], input[type=number], textarea{
+    width:100%;
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:3px;
+    padding:0.65em 0.75em;
+    font-size:0.95rem;
+    color:var(--ink);
+  }
+  input:focus, textarea:focus, button:focus-visible{
+    outline:2px solid var(--brass);
+    outline-offset:1px;
+  }
+  .field{margin-bottom:1.1em;}
+  .hint{font-size:0.78rem; color:var(--ink-faint); margin-top:0.35em;}
+  .error-text{font-size:0.82rem; color:var(--danger); margin-top:0.5em;}
+  .success-text{font-size:0.82rem; color:var(--success); margin-top:0.5em;}
+
+  /* ---------- auth view ---------- */
+  #view-auth{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:2rem 1.2rem;
+    background:
+      repeating-linear-gradient(var(--paper), var(--paper) 27px, var(--line) 28px);
+    background-size:100% 28px;
+  }
+  .auth-box{
+    width:100%;
+    max-width:400px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:2.2rem 2rem 1.8rem;
+    box-shadow:0 1px 0 rgba(31,46,35,0.04);
+  }
+  .auth-brand{
+    display:flex;
+    align-items:baseline;
+    gap:0.5em;
+    margin-bottom:0.2em;
+  }
+  .auth-brand .mark{
+    font-family:var(--serif);
+    font-size:1.6rem;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .auth-brand .tag{
+    font-family:var(--mono);
+    font-size:0.68rem;
+    color:var(--brass-deep);
+    letter-spacing:0.02em;
+  }
+  .auth-sub{color:var(--ink-soft); font-size:0.9rem; margin:0.2em 0 1.6em; line-height:1.5;}
+  .auth-toggle{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:1.6em;
+  }
+  .auth-toggle button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:0.6em;
+    font-size:0.85rem;
+    font-weight:500;
+    color:var(--ink-soft);
+  }
+  .auth-toggle button.active{background:var(--ink); color:var(--paper);}
+  .disclosure{
+    margin-top:1.4em;
+    padding-top:1.2em;
+    border-top:1px dashed var(--line);
+    font-size:0.75rem;
+    color:var(--ink-faint);
+    line-height:1.5;
+  }
+
+  /* ---------- app shell ---------- */
+  #view-shell{display:none; min-height:100vh;}
+  .shell{display:flex; min-height:100vh;}
+  .rail{
+    width:220px;
+    flex-shrink:0;
+    background:var(--ink);
+    color:var(--paper);
+    display:flex;
+    flex-direction:column;
+    padding:1.6rem 0 1.2rem;
+  }
+  .rail-brand{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:1.25rem;
+    padding:0 1.4rem 1.4rem;
+    border-bottom:1px solid rgba(243,241,228,0.15);
+    margin-bottom:0.6rem;
+  }
+  .rail-brand small{
+    display:block;
+    font-family:var(--mono);
+    font-size:0.62rem;
+    color:var(--paper-deep);
+    opacity:0.6;
+    font-weight:400;
+    margin-top:0.25em;
+  }
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:0.7em;
+    padding:0.75em 1.4rem;
+    font-size:0.88rem;
+    color:rgba(243,241,228,0.72);
+    border:none;
+    background:transparent;
+    border-left:3px solid transparent;
+    text-align:left;
+    width:100%;
+  }
+  .nav-item svg{flex-shrink:0; opacity:0.85;}
+  .nav-item:hover{background:rgba(243,241,228,0.06); color:var(--paper);}
+  .nav-item.active{
+    background:rgba(243,241,228,0.08);
+    color:var(--paper);
+    border-left-color:var(--brass);
+    font-weight:500;
+  }
+  .rail-foot{margin-top:auto; padding:0 1.4rem;}
+  .rail-user{font-size:0.75rem; color:rgba(243,241,228,0.55); margin-bottom:0.6em; word-break:break-all;}
+  .signout{
+    font-size:0.8rem;
+    background:transparent;
+    border:1px solid rgba(243,241,228,0.25);
+    color:rgba(243,241,228,0.8);
+    padding:0.5em 0.8em;
+    border-radius:3px;
+    width:100%;
+  }
+  .signout:hover{border-color:var(--paper); color:var(--paper);}
+
+  .main{
+    flex:1;
+    padding:2.4rem 3rem 3rem;
+    max-width:900px;
+  }
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .page-eyebrow{font-family:var(--mono); font-size:0.72rem; color:var(--brass-deep); margin-bottom:0.4em;}
+  .page-title{font-family:var(--serif); font-size:1.9rem; font-weight:600; margin:0 0 0.3em; letter-spacing:-0.01em;}
+  .page-desc{color:var(--ink-soft); font-size:0.95rem; max-width:58ch; line-height:1.6; margin:0 0 2rem;}
+
+  /* ---------- sheet config ---------- */
+  .config-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:1.8rem;
+    max-width:560px;
+    margin-bottom:1.6rem;
+  }
+  .config-card h3{font-family:var(--serif); font-size:1.1rem; margin:0 0 1em;}
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:0.4em;
+    font-size:0.78rem;
+    font-family:var(--mono);
+    padding:0.25em 0.6em;
+    border-radius:2px;
+    margin-bottom:1.4em;
+  }
+  .status-pill.ok{background:rgba(62,107,79,0.12); color:var(--success);}
+  .status-pill.warn{background:rgba(162,62,50,0.1); color:var(--danger);}
+  .dot{width:6px; height:6px; border-radius:50%; background:currentColor;}
+
+  details.script-details{
+    max-width:640px;
+    border:1px dashed var(--line);
+    border-radius:4px;
+    padding:1rem 1.2rem;
+    background:var(--paper-deep);
+    margin-top:0.5rem;
+  }
+  details.script-details summary{
+    cursor:pointer;
+    font-weight:500;
+    font-size:0.9rem;
+    color:var(--ink);
+  }
+  .code-block{
+    background:var(--ink);
+    color:#E9E4D0;
+    font-family:var(--mono);
+    font-size:0.76rem;
+    line-height:1.6;
+    padding:1rem;
+    border-radius:3px;
+    overflow-x:auto;
+    white-space:pre;
+    margin:0.9em 0;
+  }
+  ol.steps{padding-left:1.2em; font-size:0.87rem; color:var(--ink-soft); line-height:1.85;}
+  ol.steps li{margin-bottom:0.2em;}
+
+  /* ---------- scan view ---------- */
+  .scan-layout{display:flex; gap:2rem; flex-wrap:wrap;}
+  .scan-stage{
+    flex:1 1 380px;
+    min-width:300px;
+  }
+  .viewfinder{
+    position:relative;
+    background:#10190F;
+    border-radius:6px;
+    overflow:hidden;
+    aspect-ratio:4/3;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .viewfinder video, .viewfinder img{
+    width:100%; height:100%; object-fit:cover; display:block;
+  }
+  .viewfinder .placeholder{
+    color:rgba(243,241,228,0.4);
+    font-size:0.85rem;
+    text-align:center;
+    padding:2em;
+    font-family:var(--mono);
+  }
+  .corner{position:absolute; width:26px; height:26px; border-color:var(--brass); opacity:0.9;}
+  .corner.tl{top:14px; left:14px; border-top:3px solid; border-left:3px solid;}
+  .corner.tr{top:14px; right:14px; border-top:3px solid; border-right:3px solid;}
+  .corner.bl{bottom:14px; left:14px; border-bottom:3px solid; border-left:3px solid;}
+  .corner.br{bottom:14px; right:14px; border-bottom:3px solid; border-right:3px solid;}
+  .scan-controls{display:flex; gap:0.7em; margin-top:1rem; flex-wrap:wrap;}
+  .scan-note{font-size:0.8rem; color:var(--ink-faint); margin-top:0.8em;}
+
+  .scan-form{
+    flex:1 1 340px;
+    min-width:300px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:1.6rem 1.6rem 1.4rem;
+    position:relative;
+  }
+  .scan-form::before{
+    content:"";
+    position:absolute;
+    top:-1px; left:0; right:0; height:0;
+    border-top:2px dashed var(--line);
+  }
+  .scan-form h3{font-family:var(--serif); font-size:1.05rem; margin:0 0 0.2em;}
+  .scan-form .scan-form-sub{font-size:0.8rem; color:var(--ink-faint); margin-bottom:1.3em;}
+  .form-row{display:grid; grid-template-columns:1fr 1fr; gap:0.9em;}
+  @media (max-width:560px){.form-row{grid-template-columns:1fr;}}
+  .form-actions{display:flex; gap:0.7em; margin-top:1.2em; align-items:center;}
+  .spinner{
+    width:14px; height:14px;
+    border:2px solid rgba(31,46,35,0.2);
+    border-top-color:var(--ink);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    display:inline-block;
+    vertical-align:-2px;
+    margin-right:0.5em;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .empty-form-msg{color:var(--ink-faint); font-size:0.88rem; line-height:1.7; padding:1.5em 0;}
+
+  /* ---------- history ---------- */
+  .ledger-table{width:100%; border-collapse:collapse; font-size:0.87rem;}
+  .ledger-table th{
+    text-align:left;
+    font-weight:500;
+    font-size:0.72rem;
+    color:var(--ink-faint);
+    padding:0 0.8em 0.6em 0;
+    border-bottom:1px solid var(--ink);
+  }
+  .ledger-table td{
+    padding:0.8em 0.8em 0.8em 0;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  .ledger-table tr:last-child td{border-bottom:none;}
+  .amt{font-family:var(--mono); font-weight:500;}
+  .sync-badge{
+    font-family:var(--mono);
+    font-size:0.68rem;
+    padding:0.2em 0.5em;
+    border-radius:2px;
+    white-space:nowrap;
+  }
+  .sync-badge.synced{background:rgba(62,107,79,0.12); color:var(--success);}
+  .sync-badge.local{background:rgba(169,121,58,0.15); color:var(--brass-deep);}
+  .empty-state{
+    border:1px dashed var(--line);
+    border-radius:4px;
+    padding:2.5em 1.5em;
+    text-align:center;
+    color:var(--ink-faint);
+    font-size:0.9rem;
+    max-width:480px;
+  }
+  .toast{
+    position:fixed;
+    bottom:1.6rem; right:1.6rem;
+    background:var(--ink);
+    color:var(--paper);
+    padding:0.85em 1.2em;
+    border-radius:4px;
+    font-size:0.86rem;
+    box-shadow:0 4px 18px rgba(0,0,0,0.2);
+    z-index:50;
+    max-width:320px;
+    animation:toastin .2s ease;
+  }
+  @keyframes toastin{from{transform:translateY(8px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+
+  @media (max-width:820px){
+    .shell{flex-direction:column;}
+    .rail{
+      width:100%;
+      flex-direction:row;
+      align-items:center;
+      padding:0.8rem 1rem;
+      position:sticky; top:0; z-index:10;
+    }
+    .rail-brand{border:none; padding:0 1rem 0 0; margin:0; font-size:1.05rem;}
+    .rail-brand small{display:none;}
+    .nav-item{width:auto; padding:0.5em 0.8em; border-left:none; border-bottom:3px solid transparent;}
+    .nav-item.active{border-left-color:transparent; border-bottom-color:var(--brass);}
+    .nav-item span.nav-label{display:none;}
+    .rail-foot{display:none;}
+    .main{padding:1.6rem 1.2rem 3rem;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ AUTH VIEW ============ -->
+  <div id="view-auth">
+    <div class="auth-box">
+      <div class="auth-brand">
+        <span class="mark">Pledge Ledger</span>
+      </div>
+      <div class="auth-sub">Turn handwritten pledge cards into a clean spreadsheet — sign in to scan and save.</div>
+
+      <div class="auth-toggle">
+        <button id="tab-signin" class="active" onclick="setAuthMode('signin')">Sign in</button>
+        <button id="tab-signup" onclick="setAuthMode('signup')">Create account</button>
+      </div>
+
+      <form id="form-signin" onsubmit="return handleSignin(event)">
+        <div class="field">
+          <label for="si-email">Email</label>
+          <input type="email" id="si-email" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="si-password">Password</label>
+          <input type="password" id="si-password" required autocomplete="current-password">
+        </div>
+        <div id="si-error" class="error-text" style="display:none;"></div>
+        <button type="submit" class="btn" style="width:100%; margin-top:0.4em;">Sign in</button>
+      </form>
+
+      <form id="form-signup" style="display:none;" onsubmit="return handleSignup(event)">
+        <div class="field">
+          <label for="su-name">Your name</label>
+          <input type="text" id="su-name" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="su-email">Email</label>
+          <input type="email" id="su-email" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="su-password">Password</label>
+          <input type="password" id="su-password" required autocomplete="new-password" minlength="4">
+        </div>
+        <div id="su-error" class="error-text" style="display:none;"></div>
+        <button type="submit" class="btn" style="width:100%; margin-top:0.4em;">Create account</button>
+      </form>
+
+      <div class="disclosure">
+        This is a lightweight, self-contained tool: accounts and settings are stored in this app's shared storage rather than a secure backend, so anyone with a link to this app can see the account list and sheet settings. Don't reuse a sensitive password here — use one made up just for this tool.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ APP SHELL ============ -->
+  <div id="view-shell">
+    <div class="shell">
+      <div class="rail">
+        <div class="rail-brand">Pledge Ledger<small>Field donor intake</small></div>
+        <button class="nav-item active" id="nav-scan" onclick="switchPanel('scan')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8V6a2 2 0 0 1 2-2h2M20 8V6a2 2 0 0 0-2-2h-2M4 16v2a2 2 0 0 0 2 2h2M20 16v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3.2"/></svg>
+          <span class="nav-label">Scan a card</span>
+        </button>
+        <button class="nav-item" id="nav-sheet" onclick="switchPanel('sheet')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M3.5 9.5h17M9 9.5V21"/></svg>
+          <span class="nav-label">Sheet settings</span>
+        </button>
+        <button class="nav-item" id="nav-history" onclick="switchPanel('history')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          <span class="nav-label">Pledge history</span>
+        </button>
+        <div class="rail-foot">
+          <div class="rail-user" id="rail-user-email"></div>
+          <button class="signout" onclick="handleSignout()">Sign out</button>
+        </div>
+      </div>
+
+      <div class="main">
+
+        <!-- ---- SCAN PANEL ---- -->
+        <div class="panel active" id="panel-scan">
+          <div class="page-eyebrow">01 — Intake</div>
+          <h1 class="page-title">Scan a pledge card</h1>
+          <p class="page-desc">Point the camera at a completed card, capture it, then check the details before saving. Each save adds one row to your configured Google Sheet.</p>
+
+          <div class="scan-layout">
+            <div class="scan-stage">
+              <div class="viewfinder" id="viewfinder">
+                <div class="placeholder" id="vf-placeholder">Camera is off</div>
+                <video id="vf-video" autoplay playsinline muted style="display:none;"></video>
+                <img id="vf-image" style="display:none;" alt="Captured pledge card">
+                <div class="corner tl"></div><div class="corner tr"></div>
+                <div class="corner bl"></div><div class="corner br"></div>
+              </div>
+              <div class="scan-controls">
+                <button class="btn" id="btn-camera-on" onclick="startCamera()">Turn on camera</button>
+                <button class="btn btn-brass" id="btn-capture" style="display:none;" onclick="capturePhoto()">Capture photo</button>
+                <button class="btn-outline btn" id="btn-retake" style="display:none;" onclick="retakePhoto()">Retake</button>
+                <button class="btn" id="btn-extract" style="display:none;" onclick="extractFromPhoto()">Read pledge card</button>
+              </div>
+              <div class="scan-note" id="scan-note">Works best in good light, with the card flat and fully in frame.</div>
+              <canvas id="vf-canvas" style="display:none;"></canvas>
+            </div>
+
+            <div class="scan-form">
+              <h3>Pledge details</h3>
+              <div class="scan-form-sub">Review what was read off the card, fix anything that's wrong, then save.</div>
+              <div id="form-empty" class="empty-form-msg">Capture and read a card to fill this in — you can also type details in by hand.</div>
+              <form id="pledge-form" style="display:none;" onsubmit="return savePledge(event)">
+                <div class="field">
+                  <label for="pf-name">Donor name</label>
+                  <input type="text" id="pf-name">
+                </div>
+                <div class="form-row">
+                  <div class="field">
+                    <label for="pf-amount">Pledge amount ($)</label>
+                    <input type="text" id="pf-amount">
+                  </div>
+                  <div class="field">
+                    <label for="pf-date">Pledge date</label>
+                    <input type="text" id="pf-date">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="field">
+                    <label for="pf-phone">Phone</label>
+                    <input type="text" id="pf-phone">
+                  </div>
+                  <div class="field">
+                    <label for="pf-email">Email</label>
+                    <input type="text" id="pf-email">
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="pf-address">Address</label>
+                  <input type="text" id="pf-address">
+                </div>
+                <div class="field">
+                  <label for="pf-notes">Notes</label>
+                  <textarea id="pf-notes" rows="2"></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn" id="btn-save">Save pledge</button>
+                  <span id="save-status" style="font-size:0.82rem;"></span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- SHEET SETTINGS PANEL ---- -->
+        <div class="panel" id="panel-sheet">
+          <div class="page-eyebrow">02 — Setup</div>
+          <h1 class="page-title">Connect your Google Sheet</h1>
+          <p class="page-desc">Pledges are written to your sheet through a small Google Apps Script "web app" you deploy once. This setting is shared with everyone using this tool, since it points at one shared sheet.</p>
+
+          <div class="config-card">
+            <h3>Web app URL</h3>
+            <div id="sheet-status" class="status-pill warn"><span class="dot"></span>Not connected</div>
+            <form onsubmit="return saveSheetConfig(event)">
+              <div class="field">
+                <label for="sheet-url">Apps Script web app URL</label>
+                <input type="text" id="sheet-url" placeholder="https://script.google.com/macros/s/…/exec">
+                <div class="hint">You'll get this URL after deploying the script below.</div>
+              </div>
+              <div style="display:flex; gap:0.7em;">
+                <button type="submit" class="btn">Save</button>
+                <button type="button" class="btn-outline btn" onclick="testSheetConnection()">Test connection</button>
+              </div>
+              <div id="sheet-test-result" style="margin-top:0.8em;"></div>
+            </form>
+          </div>
+
+          <details class="script-details">
+            <summary>How to set up the Google Sheet (one-time, ~5 minutes)</summary>
+            <ol class="steps">
+              <li>Create or open the Google Sheet you want pledges saved into.</li>
+              <li>Go to <strong>Extensions → Apps Script</strong>.</li>
+              <li>Delete any starter code and paste in the script below.</li>
+              <li>Click <strong>Deploy → New deployment</strong>. Choose type <strong>Web app</strong>.</li>
+              <li>Set "Execute as" to <strong>Me</strong>, and "Who has access" to <strong>Anyone</strong>.</li>
+              <li>Click <strong>Deploy</strong>, authorize it, then copy the web app URL it gives you.</li>
+              <li>Paste that URL into the field above and save.</li>
+            </ol>
+            <div class="code-block" id="apps-script-code">function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Pledges') || ss.insertSheet('Pledges');
+  var data = JSON.parse(e.postData.contents);
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['Scanned at', 'Donor name', 'Amount', 'Phone', 'Email', 'Address', 'Pledge date', 'Notes', 'Scanned by']);
+  }
+
+  sheet.appendRow([
+    new Date(),
+    data.donorName || '',
+    data.amount || '',
+    data.phone || '',
+    data.email || '',
+    data.address || '',
+    data.pledgeDate || '',
+    data.notes || '',
+    data.scannedBy || ''
+  ]);
+
+  return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({ status: 'ok', message: 'Pledge Ledger endpoint is active' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+            <button class="btn-outline btn" style="font-size:0.8rem; padding:0.5em 0.9em;" onclick="copyScript()">Copy script</button>
+            <span id="copy-confirm" style="font-size:0.8rem; color:var(--success); margin-left:0.6em;"></span>
+          </details>
+        </div>
+
+        <!-- ---- HISTORY PANEL ---- -->
+        <div class="panel" id="panel-history">
+          <div class="page-eyebrow">03 — Record</div>
+          <h1 class="page-title">Pledge history</h1>
+          <p class="page-desc">Every pledge saved from this tool, whether or not it reached the sheet successfully.</p>
+          <div id="history-content"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   Storage helpers
+---------------------------------------------------------------- */
+async function storeGet(key, shared){
+  try { const r = await window.storage.get(key, shared); return r ? r.value : null; }
+  catch(e){ return null; }
+}
+async function storeSet(key, value, shared){
+  try { return await window.storage.set(key, value, shared); }
+  catch(e){ console.error('storage set failed', e); return null; }
+}
+async function storeList(prefix, shared){
+  try { const r = await window.storage.list(prefix, shared); return r ? r.keys : []; }
+  catch(e){ return []; }
+}
+async function storeDelete(key, shared){
+  try { return await window.storage.delete(key, shared); } catch(e){ return null; }
+}
+
+/* ---------------------------------------------------------------
+   Auth
+---------------------------------------------------------------- */
+let currentUser = null; // {email, name}
+
+function setAuthMode(mode){
+  document.getElementById('tab-signin').classList.toggle('active', mode==='signin');
+  document.getElementById('tab-signup').classList.toggle('active', mode==='signup');
+  document.getElementById('form-signin').style.display = mode==='signin' ? 'block':'none';
+  document.getElementById('form-signup').style.display = mode==='signup' ? 'block':'none';
+}
+
+function showError(id, msg){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError(id){
+  document.getElementById(id).style.display = 'none';
+}
+
+async function handleSignup(e){
+  e.preventDefault();
+  hideError('su-error');
+  const name = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim().toLowerCase();
+  const password = document.getElementById('su-password').value;
+  if(!email || !password){ return false; }
+
+  const existing = await storeGet('user:'+email, true);
+  if(existing){
+    showError('su-error', 'An account with that email already exists — try signing in instead.');
+    return false;
+  }
+  await storeSet('user:'+email, JSON.stringify({ name, password, createdAt: Date.now() }), true);
+  await storeSet('session:current', email, false);
+  currentUser = { email, name };
+  enterApp();
+  return false;
+}
+
+async function handleSignin(e){
+  e.preventDefault();
+  hideError('si-error');
+  const email = document.getElementById('si-email').value.trim().toLowerCase();
+  const password = document.getElementById('si-password').value;
+  const raw = await storeGet('user:'+email, true);
+  if(!raw){
+    showError('si-error', 'No account found with that email.');
+    return false;
+  }
+  const record = JSON.parse(raw);
+  if(record.password !== password){
+    showError('si-error', 'That password doesn\'t match.');
+    return false;
+  }
+  await storeSet('session:current', email, false);
+  currentUser = { email, name: record.name };
+  enterApp();
+  return false;
+}
+
+async function handleSignout(){
+  await storeDelete('session:current', false);
+  currentUser = null;
+  stopCamera();
+  document.getElementById('view-shell').style.display = 'none';
+  document.getElementById('view-auth').style.display = 'flex';
+}
+
+async function tryAutoLogin(){
+  const email = await storeGet('session:current', false);
+  if(!email) return false;
+  const raw = await storeGet('user:'+email, true);
+  if(!raw) return false;
+  const record = JSON.parse(raw);
+  currentUser = { email, name: record.name };
+  return true;
+}
+
+async function enterApp(){
+  document.getElementById('view-auth').style.display = 'none';
+  document.getElementById('view-shell').style.display = 'block';
+  document.getElementById('rail-user-email').textContent = currentUser.name ? currentUser.name+' · '+currentUser.email : currentUser.email;
+  await loadSheetConfig();
+  await renderHistory();
+}
+
+/* ---------------------------------------------------------------
+   Navigation
+---------------------------------------------------------------- */
+function switchPanel(name){
+  ['scan','sheet','history'].forEach(p=>{
+    document.getElementById('panel-'+p).classList.toggle('active', p===name);
+    document.getElementById('nav-'+p).classList.toggle('active', p===name);
+  });
+  if(name === 'history') renderHistory();
+  if(name !== 'scan') { /* leave camera running is fine, just visually paused off-screen */ }
+}
+
+/* ---------------------------------------------------------------
+   Sheet configuration
+---------------------------------------------------------------- */
+let sheetConfig = null; // { webAppUrl }
+
+async function loadSheetConfig(){
+  const raw = await storeGet('sheet-config', true);
+  sheetConfig = raw ? JSON.parse(raw) : null;
+  document.getElementById('sheet-url').value = sheetConfig ? sheetConfig.webAppUrl : '';
+  updateSheetStatusPill();
+}
+
+function updateSheetStatusPill(hasError){
+  const pill = document.getElementById('sheet-status');
+  if(sheetConfig && sheetConfig.webAppUrl && !hasError){
+    pill.className = 'status-pill ok';
+    pill.innerHTML = '<span class="dot"></span>Connected';
+  } else {
+    pill.className = 'status-pill warn';
+    pill.innerHTML = '<span class="dot"></span>Not connected';
+  }
+}
+
+async function saveSheetConfig(e){
+  e.preventDefault();
+  const url = document.getElementById('sheet-url').value.trim();
+  sheetConfig = { webAppUrl: url };
+  await storeSet('sheet-config', JSON.stringify(sheetConfig), true);
+  updateSheetStatusPill();
+  const resultEl = document.getElementById('sheet-test-result');
+  resultEl.innerHTML = '<span class="success-text">Saved.</span>';
+  return false;
+}
+
+async function testSheetConnection(){
+  const resultEl = document.getElementById('sheet-test-result');
+  const url = document.getElementById('sheet-url').value.trim();
+  if(!url){
+    resultEl.innerHTML = '<span class="error-text">Enter a web app URL first.</span>';
+    return;
+  }
+  resultEl.innerHTML = '<span class="hint"><span class="spinner"></span>Testing…</span>';
+  try{
+    const res = await fetch(url, { method:'GET' });
+    const data = await res.json();
+    if(data && data.status === 'ok'){
+      resultEl.innerHTML = '<span class="success-text">Connected — the script responded correctly.</span>';
+      updateSheetStatusPill(false);
+    } else {
+      resultEl.innerHTML = '<span class="error-text">Reached the URL, but got an unexpected response. Check the script code.</span>';
+      updateSheetStatusPill(true);
+    }
+  } catch(err){
+    resultEl.innerHTML = '<span class="error-text">Couldn\'t reach that URL. Check it\'s deployed with access set to "Anyone".</span>';
+    updateSheetStatusPill(true);
+  }
+}
+
+function copyScript(){
+  const text = document.getElementById('apps-script-code').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const el = document.getElementById('copy-confirm');
+    el.textContent = 'Copied';
+    setTimeout(()=>{ el.textContent=''; }, 2000);
+  });
+}
+
+/* ---------------------------------------------------------------
+   Camera + capture
+---------------------------------------------------------------- */
+let mediaStream = null;
+
+async function startCamera(){
+  const video = document.getElementById('vf-video');
+  const img = document.getElementById('vf-image');
+  const placeholder = document.getElementById('vf-placeholder');
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio:false });
+    video.srcObject = mediaStream;
+    video.style.display = 'block';
+    img.style.display = 'none';
+    placeholder.style.display = 'none';
+    document.getElementById('btn-camera-on').style.display = 'none';
+    document.getElementById('btn-capture').style.display = 'inline-block';
+    document.getElementById('btn-retake').style.display = 'none';
+    document.getElementById('btn-extract').style.display = 'none';
+    document.getElementById('scan-note').textContent = 'Center the card in frame, then capture.';
+  } catch(err){
+    document.getElementById('scan-note').textContent = 'Couldn\'t access the camera. Check your browser\'s camera permission for this page.';
+  }
+}
+
+function stopCamera(){
+  if(mediaStream){
+    mediaStream.getTracks().forEach(t=>t.stop());
+    mediaStream = null;
+  }
+}
+
+function capturePhoto(){
+  const video = document.getElementById('vf-video');
+  const canvas = document.getElementById('vf-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+  document.getElementById('vf-image').src = dataUrl;
+  document.getElementById('vf-image').style.display = 'block';
+  video.style.display = 'none';
+  stopCamera();
+
+  document.getElementById('btn-capture').style.display = 'none';
+  document.getElementById('btn-retake').style.display = 'inline-block';
+  document.getElementById('btn-extract').style.display = 'inline-block';
+  document.getElementById('scan-note').textContent = 'Looks good? Read the card, or retake the photo.';
+}
+
+function retakePhoto(){
+  document.getElementById('vf-image').style.display = 'none';
+  document.getElementById('btn-retake').style.display = 'none';
+  document.getElementById('btn-extract').style.display = 'none';
+  document.getElementById('btn-camera-on').style.display = 'inline-block';
+  document.getElementById('vf-placeholder').style.display = 'flex';
+  document.getElementById('scan-note').textContent = 'Works best in good light, with the card flat and fully in frame.';
+}
+
+/* ---------------------------------------------------------------
+   AI extraction
+---------------------------------------------------------------- */
+async function extractFromPhoto(){
+  const btn = document.getElementById('btn-extract');
+  const note = document.getElementById('scan-note');
+  btn.disabled = true;
+  note.innerHTML = '<span class="spinner"></span>Reading the card…';
+
+  const dataUrl = document.getElementById('vf-image').src;
+  const base64 = dataUrl.split(',')[1];
+
+  const prompt = `You are extracting structured data from a photo of a handwritten donor pledge card.
+Return ONLY a raw JSON object, no markdown fences, no commentary, with exactly these keys:
+donorName, amount, phone, email, address, pledgeDate, notes.
+Rules:
+- amount: digits only, no currency symbol or commas (e.g. "250"). If unclear, best guess digits, or "" if none written.
+- pledgeDate: as written, reformatted to MM/DD/YYYY if you can determine it, otherwise the raw text.
+- notes: any other relevant handwritten detail (e.g. payment frequency, employer match, designation). Empty string if none.
+- If a field is illegible or absent, use an empty string for that field. Never invent information.`;
+
+  try{
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            { type:'image', source:{ type:'base64', media_type:'image/jpeg', data: base64 } },
+            { type:'text', text: prompt }
+          ]
+        }]
+      })
+    });
+    const data = await response.json();
+    const textBlock = (data.content || []).find(b=>b.type==='text');
+    if(!textBlock) throw new Error('No text in response');
+    let cleaned = textBlock.text.trim().replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+    const fields = JSON.parse(cleaned);
+    fillPledgeForm(fields);
+    note.textContent = 'Read successfully — check the fields before saving.';
+  } catch(err){
+    console.error(err);
+    note.innerHTML = '<span class="error-text">Couldn\'t read the card automatically. You can still fill the fields in by hand.</span>';
+    fillPledgeForm({ donorName:'', amount:'', phone:'', email:'', address:'', pledgeDate:'', notes:'' });
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function fillPledgeForm(fields){
+  document.getElementById('form-empty').style.display = 'none';
+  document.getElementById('pledge-form').style.display = 'block';
+  document.getElementById('pf-name').value = fields.donorName || '';
+  document.getElementById('pf-amount').value = fields.amount || '';
+  document.getElementById('pf-date').value = fields.pledgeDate || '';
+  document.getElementById('pf-phone').value = fields.phone || '';
+  document.getElementById('pf-email').value = fields.email || '';
+  document.getElementById('pf-address').value = fields.address || '';
+  document.getElementById('pf-notes').value = fields.notes || '';
+}
+
+/* ---------------------------------------------------------------
+   Save pledge (local record + Google Sheet write)
+---------------------------------------------------------------- */
+async function savePledge(e){
+  e.preventDefault();
+  const btn = document.getElementById('btn-save');
+  const statusEl = document.getElementById('save-status');
+  btn.disabled = true;
+  statusEl.innerHTML = '<span class="spinner"></span>Saving…';
+
+  const record = {
+    id: 'pl_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    donorName: document.getElementById('pf-name').value.trim(),
+    amount: document.getElementById('pf-amount').value.trim(),
+    phone: document.getElementById('pf-phone').value.trim(),
+    email: document.getElementById('pf-email').value.trim(),
+    address: document.getElementById('pf-address').value.trim(),
+    pledgeDate: document.getElementById('pf-date').value.trim(),
+    notes: document.getElementById('pf-notes').value.trim(),
+    scannedBy: currentUser ? currentUser.email : '',
+    scannedAt: Date.now(),
+    syncStatus: 'local'
+  };
+
+  if(sheetConfig && sheetConfig.webAppUrl){
+    try{
+      const res = await fetch(sheetConfig.webAppUrl, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // avoids CORS preflight against Apps Script
+        body: JSON.stringify(record)
+      });
+      const data = await res.json();
+      record.syncStatus = (data && data.status === 'success') ? 'synced' : 'local';
+    } catch(err){
+      record.syncStatus = 'local';
+    }
+  }
+
+  await storeSet('pledge:'+record.id, JSON.stringify(record), true);
+
+  btn.disabled = false;
+  if(record.syncStatus === 'synced'){
+    statusEl.innerHTML = '<span class="success-text">Saved to the sheet.</span>';
+  } else {
+    statusEl.innerHTML = '<span class="error-text">Saved locally only — check your sheet connection.</span>';
+  }
+  showToast(record.syncStatus === 'synced' ? 'Pledge saved to the sheet.' : 'Pledge saved locally (not synced to sheet).');
+
+  // reset scan stage for the next card
+  document.getElementById('pledge-form').reset();
+  setTimeout(()=>{
+    document.getElementById('pledge-form').style.display = 'none';
+    document.getElementById('form-empty').style.display = 'block';
+    statusEl.innerHTML = '';
+    retakePhoto();
+  }, 900);
+}
+
+function showToast(msg){
+  const existing = document.querySelector('.toast');
+  if(existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3600);
+}
+
+/* ---------------------------------------------------------------
+   History
+---------------------------------------------------------------- */
+async function renderHistory(){
+  const container = document.getElementById('history-content');
+  const keys = await storeList('pledge:', true);
+  if(!keys || keys.length === 0){
+    container.innerHTML = '<div class="empty-state">No pledges scanned yet. Head to "Scan a card" to add your first one.</div>';
+    return;
+  }
+  const records = [];
+  for(const k of keys){
+    const raw = await storeGet(k, true);
+    if(raw) records.push(JSON.parse(raw));
+  }
+  records.sort((a,b)=> b.scannedAt - a.scannedAt);
+
+  let rows = records.map(r=>{
+    const date = new Date(r.scannedAt);
+    const when = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const badge = r.syncStatus === 'synced'
+      ? '<span class="sync-badge synced">In sheet</span>'
+      : '<span class="sync-badge local">Local only</span>';
+    return `<tr>
+      <td>${escapeHtml(r.donorName || '—')}</td>
+      <td class="amt">${r.amount ? '$'+escapeHtml(r.amount) : '—'}</td>
+      <td>${escapeHtml(r.pledgeDate || '—')}</td>
+      <td>${when}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="ledger-table">
+      <thead><tr><th>Donor</th><th>Amount</th><th>Pledge date</th><th>Scanned</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------------------------------------------------------
+   Boot
+---------------------------------------------------------------- */
+(async function init(){
+  const loggedIn = await tryAutoLogin();
+  if(loggedIn){
+    await enterApp();
+  }
+})();
+</script>
+</body>
+</html>
